@@ -18,7 +18,7 @@ const connection = mysql.createConnection({
     user: 'root',
     password: '56742389',
     database: 'c237_studentlistapp'
-})
+});
 
 connection.connect((err) => {
     if (err) {
@@ -27,37 +27,47 @@ connection.connect((err) => {
     }
     console.log('Connected to MySQL database');
 });
+
 // Set up view engine
 app.set('view engine', 'ejs');
+
 // enable static files
 app.use(express.static('public'));
+
 // enable form processing
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // Define routes
 app.get('/', (req, res) => {
-    connection.query('SELECT * FROM students', (error, results) => {
-        if (error) throw error;
-        res.render('index', { students: results }); // Render HTML page with data
+    const sql = 'SELECT * FROM students';
+    // Fetch data from MySQL
+    connection.query(sql, (error, results) => {
+        if (error) {
+            console.error('Database query error:', error.message);
+            return res.send('Error Retrieving students');
+        }
+        // Render HTML page with data
+        res.render('index', { students: results });
     });
 });
 
 app.get('/student/:id', (req, res) => {
     const studentId = req.params.id;
-    const sql = "SELECT * FROM students WHERE id = ?";
+    const sql = 'SELECT * FROM students WHERE studentid = ?'; // lowercase matches schema
     connection.query(sql, [studentId], (error, results) => {
         if (error) {
             console.error('Database query error:', error.message);
-            return res.send('Error retrieving student by ID');
+            return res.send('Error Retrieving student by ID');
         }
-        if (results.length > 0){
+        if (results.length > 0) {
             res.render('student', { student: results[0] });
         } else {
             res.send('Student not found');
         }
     });
 });
+
 
 app.get('/addStudent', (req, res) => {
         res.render('addStudent');
@@ -74,14 +84,14 @@ app.post('/addStudent', upload.single('image'), (req, res) => {
     }
     const sql = "INSERT INTO students (name, dob, contact, image) VALUES (?, ?, ?, ?)";
     // Insert the new student into the database
-    connection.query( sql , [name, dob, contact, image], (error, results) => {        
+    connection.query(sql, [name, dob, contact, image], (error, results) => {
         if (error) {
             // Handle any error that occurs during the database operation
             console.error("Error adding student:", error);
             res.send('Error adding student');
         } else {
-        // Send a success response
-        res.redirect('/');
+            // Send a success response
+            res.redirect('/');
         }
     });
 });
