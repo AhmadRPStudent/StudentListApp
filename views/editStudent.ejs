@@ -69,8 +69,10 @@
                 <div class="mb-3">
                   <label class="form-label">Current Image</label>
                   <div class="text-center">
-                    <img src="<%= student.image %>" alt="<%= student.name %>" class="img-fluid rounded border"
-                      style="max-height: 200px;">
+                    <input type="text" name="currentImage" value=<%= product.image%> readonly><br>
+                    <img src="/images/<%= student.image %>" alt="<%= student.name %>" class="img-fluid rounded border"
+                      style="max-height: 200px;"><br><br>
+                    New Image:<br> <input type="file" id="image" name="image" accept="image/*" value=<%=student.image%>><br><br>
                   </div>
                 </div>
 

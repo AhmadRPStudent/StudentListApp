@@ -1,8 +1,18 @@
 const express = require('express');
 const mysql = require('mysql2');
+const multer = require('multer');
+const { compile } = require('ejs');
 const app = express();
 
-// Create MySQL connection
+const storage = multer.diskStorage ({
+    destination: (req,file,cb) => {
+        cb(null, 'public/images');
+    },
+    filename: (req,file,cb) => {
+        cb(null, file.originalname);
+    }
+})
+
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -26,6 +36,7 @@ app.use(express.static('public'));
 
 // enable form processing
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 // Define routes
 app.get('/', (req, res) => {
@@ -59,13 +70,19 @@ app.get('/student/:id', (req, res) => {
 
 
 app.get('/addStudent', (req, res) => {
-    res.render('addStudent');
-});
-
-app.post('/addStudent', (req, res) => {
+        res.render('addStudent');
+        });
+        
+app.post('/addStudent', upload.single('image'), (req, res) => {
     // Extract student data from the request body
-    const { name, dob, contact, image } = req.body;
-    const sql = 'INSERT INTO students (name, dob, contact, image) VALUES (?, ?, ?, ?)';
+    const { name, dob, contact } = req.body;
+    let image;
+    if (req.file){
+        image = req.file.filename;
+    } else {
+        image =null
+    }
+    const sql = "INSERT INTO students (name, dob, contact, image) VALUES (?, ?, ?, ?)";
     // Insert the new student into the database
     connection.query(sql, [name, dob, contact, image], (error, results) => {
         if (error) {
@@ -82,7 +99,6 @@ app.post('/addStudent', (req, res) => {
 app.get('/editStudent/:id', (req, res) => {
     const studentId = req.params.id;
     const sql = "SELECT studentid, name, DATE_FORMAT(dob, '%Y-%m-%d') AS dob, contact, image FROM students WHERE studentid = ?";
-
     connection.query(sql, [studentId], (error, results) => {
         if (error) {
             console.error('Database query error:', error.message);
@@ -98,9 +114,13 @@ app.get('/editStudent/:id', (req, res) => {
 });
 
 
-app.post('/editStudent/:id', (req, res) => {
+app.post('/editStudent/:id', upload.single('image'), (req, res) => {
     const studentId = req.params.id;
     const { name, dob, contact, image } = req.body;
+    let image = req.body.currentImage;
+        if(req.file){
+            image = req.file.filename;
+        }
     const sql = 'UPDATE students SET name = ?, dob = ?, contact = ?, image = ? WHERE studentid = ?';
     connection.query(sql, [name, dob, contact, image, studentId], (error, results) => {
         if (error) {
@@ -111,21 +131,19 @@ app.post('/editStudent/:id', (req, res) => {
     });
 });
 
-
-app.get('/deleteStudent/:id', (req, res) => {
-    const productId = req.params.id;
-    const sql = 'DELETE FROM products WHERE studentId = ?';
-    connection.query(sql, [productId], (error, results) => {
-        if (error) {
-            // Handle any error that occurs during the database operation
-            console.error("Error deleting product:", error);
-            res.send('Error deleting product');
+app.get('/deleteStudent/:id', (req,res)=>{
+    const studentId = req.params.id;
+    const sql = 'DELETE FROM students WHERE studentId = ?';
+    connection.query( sql, [studentId], (error,results)=>{
+        if(error){
+            console.error("Error deleteting student:", error);
+            res.send('Error deleting student');
         } else {
-            // Send a success response
-            res.redirect('/');
+            res.redirect('/')
         }
     });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
