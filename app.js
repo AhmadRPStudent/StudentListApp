@@ -1,7 +1,8 @@
+require('dotenv').config();
+
 const express = require('express');
 const mysql = require('mysql2');
 const multer = require('multer');
-const { compile } = require('ejs');
 const app = express();
 
 const storage = multer.diskStorage ({
@@ -13,11 +14,13 @@ const storage = multer.diskStorage ({
     }
 })
 
+const upload = multer({storage: storage});
+
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '56742389',
-    database: 'c237_studentlistapp'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
 connection.connect((err) => {
@@ -116,11 +119,11 @@ app.get('/editStudent/:id', (req, res) => {
 
 app.post('/editStudent/:id', upload.single('image'), (req, res) => {
     const studentId = req.params.id;
-    const { name, dob, contact, image } = req.body;
+    const { name, dob, contact } = req.body;
     let image = req.body.currentImage;
-        if(req.file){
-            image = req.file.filename;
-        }
+    if(req.file){
+        image = req.file.filename;
+    }
     const sql = 'UPDATE students SET name = ?, dob = ?, contact = ?, image = ? WHERE studentid = ?';
     connection.query(sql, [name, dob, contact, image, studentId], (error, results) => {
         if (error) {
